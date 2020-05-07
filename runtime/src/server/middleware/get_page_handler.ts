@@ -11,7 +11,8 @@ import App from '@sapper/internal/App.svelte';
 
 export function get_page_handler(
 	manifest: Manifest,
-	session_getter: (req: Req, res: Res) => any
+	session_getter: (req: Req, res: Res) => any,
+	error_handler?: (err: Error, req: Req, res: Res, next: () => void) => void
 ) {
 	const get_build_info = dev
 		? () => JSON.parse(fs.readFileSync(path.join(build_dir, 'build.json'), 'utf-8'))
@@ -36,12 +37,18 @@ export function get_page_handler(
 	}
 
 	function handle_error(req: Req, res: Res, statusCode: number, error: Error | string) {
-		handle_page({
+		const next = () => handle_page({
 			pattern: null,
 			parts: [
 				{ name: null, component: error_route }
 			]
 		}, req, res, statusCode, error || new Error('Unknown error in preload function'));
+
+		if (error_handler) {
+			error_handler(error instanceof Error ? error : new Error(error), req, res, next);
+		} else { 
+			next();
+		}
 	}
 
 	async function handle_page(page: Page, req: Req, res: Res, status = 200, error: Error | string = null) {

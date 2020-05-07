@@ -8,9 +8,10 @@ import { lookup } from './mime';
 
 export default function middleware(opts: {
 	session?: (req: Req, res: Res) => any,
+	error?: (err: Error, req: Req, res: Res, next: () => void) => void,
 	ignore?: any
 } = {}) {
-	const { session, ignore } = opts;
+	const { session, ignore, error } = opts;
 
 	let emitted_basepath = false;
 
@@ -59,9 +60,9 @@ export default function middleware(opts: {
 			cache_control: dev ? 'no-cache' : 'max-age=31536000, immutable'
 		}),
 
-		get_server_route_handler(manifest.server_routes),
+		get_server_route_handler(manifest.server_routes, error),
 
-		get_page_handler(manifest, session || noop)
+		get_page_handler(manifest, session || noop, error)
 	].filter(Boolean));
 }
 
