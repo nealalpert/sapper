@@ -211,7 +211,8 @@ export async function navigate(target: Target, id: number, noscroll?: boolean, h
 }
 
 async function render(redirect: Redirect, branch: any[], props: any, page: Page) {
-	if (redirect) return goto(redirect.location, { replaceState: true });
+	//disabling redirect on render because of cdn bug
+	//if (redirect) return goto(redirect.location, { replaceState: true });
 
 	stores.page.set(page);
 	stores.preloading.set(false);
