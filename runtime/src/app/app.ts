@@ -41,6 +41,8 @@ stores.session.subscribe(async value => {
 
 	const target = select_target(new URL(location.href));
 
+	console.log('session updated target =', target);
+
 	const token = current_token = {};
 	const { redirect, props, branch } = await hydrate_target(target);
 	if (token !== current_token) return; // a secondary navigation happened while we were loading
