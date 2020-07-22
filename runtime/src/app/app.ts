@@ -41,7 +41,7 @@ stores.session.subscribe(async value => {
 
 	let url = new URL(location.href);
 
-	if (initial_data.preloaded && initial_data.preloaed[1] && initial_data.preloaed[1].path) {
+	if (initial_data.preloaded && initial_data.preloaded[1] && initial_data.preloaded[1].path) {
 		url.pathname = initial_data.preloaded[1].path;
 	}
 
