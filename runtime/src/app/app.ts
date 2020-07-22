@@ -41,8 +41,6 @@ stores.session.subscribe(async value => {
 
 	const target = select_target(new URL(location.href));
 
-	console.log('session updated target =', target);
-
 	const token = current_token = {};
 	const { redirect, props, branch } = await hydrate_target(target);
 	if (token !== current_token) return; // a secondary navigation happened while we were loading
@@ -213,8 +211,7 @@ export async function navigate(target: Target, id: number, noscroll?: boolean, h
 }
 
 async function render(redirect: Redirect, branch: any[], props: any, page: Page) {
-	//disabling redirect on render because of cdn bug
-	//if (redirect) return goto(redirect.location, { replaceState: true });
+	if (redirect) return goto(redirect.location, { replaceState: true });
 
 	stores.page.set(page);
 	stores.preloading.set(false);
