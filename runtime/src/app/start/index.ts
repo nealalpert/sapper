@@ -35,7 +35,11 @@ export default function start(opts: {
 
 		history.replaceState({ id: uid }, '', href);
 
-		const url = new URL(location.href);
+		let url = new URL(location.href);
+
+		if (initial_data?.preloaded?.[1]?.path) {
+			url.pathname = initial_data.preloaded[1].path;
+		}
 
 		if (initial_data.error) return handle_error(url);
 

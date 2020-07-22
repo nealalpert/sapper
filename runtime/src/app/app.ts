@@ -39,7 +39,13 @@ stores.session.subscribe(async value => {
 	if (!ready) return;
 	session_dirty = true;
 
-	const target = select_target(new URL(location.href));
+	let url = new URL(location.href);
+
+	if (initial_data?.preloaded?.[1]?.path) {
+		url.pathname = initial_data.preloaded[1].path;
+	}
+
+	const target = select_target(url);
 
 	const token = current_token = {};
 	const { redirect, props, branch } = await hydrate_target(target);
