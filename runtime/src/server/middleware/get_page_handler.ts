@@ -101,12 +101,7 @@ export function get_page_handler(
 
 		res.setHeader('Link', link);
 
-		let session;
-		try {
-			session = await session_getter(req, res);
-		} catch (err) {
-			return bail(req, res, err);
-		}
+		const session = session_getter(req, res);	
 
 		let redirect: { statusCode: number, location: string };
 		let preload_error: { statusCode: number, message: Error | string };
