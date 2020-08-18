@@ -89,6 +89,8 @@ export function get_page_handler(
 			preload_files = preload_files.concat(build_info.css.chunks[route]);
 		}
 
+		const session = session_getter(req, res);
+
 		const link = preload_files
 			.filter((v, i, a) => a.indexOf(v) === i)        // remove any duplicates
 			.filter(file => file && !file.match(/\.map$/))  // exclude source maps
@@ -99,9 +101,7 @@ export function get_page_handler(
 			})
 			.join(', ');
 
-		res.setHeader('Link', link);
-
-		const session = session_getter(req, res);	
+		res.setHeader('Link', link);	
 
 		let redirect: { statusCode: number, location: string };
 		let preload_error: { statusCode: number, message: Error | string };
