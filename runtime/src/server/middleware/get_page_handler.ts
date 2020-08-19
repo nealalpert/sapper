@@ -82,6 +82,13 @@ export function get_page_handler(
 			const route = page.parts[page.parts.length - 1].file;
 
 			// JS
+			// client.js dependencies
+			const client_js_id = Object.keys(build_info.dependencies).find(d => d.match(/client\.js$/));
+			if (client_js_id) preload_files = preload_files.concat(build_info.dependencies[client_js_id]);
+			// _layout.svelte dependencies
+			const layout_svelte_id = Object.keys(build_info.dependencies).find(d => d.match(/_layout\.svelte$/));
+			if (layout_svelte_id) preload_files = preload_files.concat(build_info.dependencies[layout_svelte_id]);
+			// page dependencies
 			preload_files = preload_files.concat(build_info.dependencies[route]);
 
 			// CSS
