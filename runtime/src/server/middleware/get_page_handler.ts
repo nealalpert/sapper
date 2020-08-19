@@ -98,16 +98,17 @@ export function get_page_handler(
 
 		const session = session_getter(req, res);
 
-		const link = preload_files
+		const preloads = preload_files
 			.filter((v, i, a) => a.indexOf(v) === i)        // remove any duplicates
 			.filter(file => file && !file.match(/\.map$/))  // exclude source maps
 			.map((file) => {
 				const as = /\.css$/.test(file) ? 'style' : 'script';
 				const rel = es6_preload && as === 'script' ? 'modulepreload' : 'preload';
-				return `<${req.baseUrl}/client/${file}>;rel="${rel}";as="${as}"`;
-			})
-			.join(', ');
+				const path = `${req.baseUrl}/client/${file}`;
+				return { path, rel, as, link: `<${req.baseUrl}/client/${file}>;rel="${rel}";as="${as}"` };
+			});
 
+		const link = preloads.map(p => p.link).join(', ');
 		res.setHeader('Link', link);	
 
 		let redirect: { statusCode: number, location: string };
@@ -344,6 +345,7 @@ export function get_page_handler(
 
 			const body = template()
 				.replace('%sapper.base%', () => `<base href="${req.baseUrl}/">`)
+				.replace('%sapper.preloads%', () => preloads.length ? preloads.map(({ path, as, rel})=>`<link href="${path}" as="${as}" rel="${rel}">`).join('') : '')
 				.replace('%sapper.scripts%', () => `<script${nonce_attr}>${script}</script>`)
 				.replace('%sapper.html%', () => html)
 				.replace('%sapper.head%', () => `<noscript id='sapper-head-start'></noscript>${head}<noscript id='sapper-head-end'></noscript>`)
