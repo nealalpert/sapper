@@ -1,6 +1,7 @@
 import { writable } from 'svelte/store';
 import fs from 'fs';
 import path from 'path';
+import url from 'url';
 import cookie from 'cookie';
 import devalue from 'devalue';
 import fetch from 'node-fetch';
@@ -98,18 +99,26 @@ export function get_page_handler(
 
 		const session = session_getter(req, res);
 
+		const get_client_file_url = (file, legacy = false) => { 
+			if (process.env.ASSETS_BASE_URL) {
+				return url.resolve(process.env.ASSETS_BASE_URL, `./client${legacy ? '/legacy' : ''}/${file}`);
+			} else { 
+				return `${req.baseUrl}/client${legacy ? '/legacy' : ''}/${file}`
+			}
+		}
+
 		const preloads = preload_files
 			.filter((v, i, a) => a.indexOf(v) === i)        // remove any duplicates
 			.filter(file => file && !file.match(/\.map$/))  // exclude source maps
 			.map((file) => {
 				const as = /\.css$/.test(file) ? 'style' : 'script';
 				const rel = es6_preload && as === 'script' ? 'modulepreload' : 'preload';
-				const path = `${req.baseUrl}/client/${file}`;
-				return { path, rel, as, link: `<${req.baseUrl}/client/${file}>;rel="${rel}";as="${as}"` };
+				const href = get_client_file_url(file);
+				return { href, rel, as };
 			});
 
-		const link = preloads.map(p => p.link).join(', ');
-		res.setHeader('Link', link);	
+		const link_header = preloads.map(({ href, rel, as }) => `<${href}>;rel="${rel}";as="${as}"`).join(', ');
+		res.setHeader('Link', link_header);	
 
 		let redirect: { statusCode: number, location: string };
 		let preload_error: { statusCode: number, message: Error | string };
@@ -302,11 +311,11 @@ export function get_page_handler(
 			}
 
 			const file = [].concat(build_info.assets.main).filter(file => file && /\.js$/.test(file))[0];
-			const main = `${req.baseUrl}/client/${file}`;
+			const main = get_client_file_url(file);
 
 			if (build_info.bundler === 'rollup') {
 				if (build_info.legacy_assets) {
-					const legacy_main = `${req.baseUrl}/client/legacy/${build_info.legacy_assets.main}`;
+					const legacy_main = get_client_file_url(file, true);
 					script += `(function(){try{eval("async function x(){}");var main="${main}"}catch(e){main="${legacy_main}"};var s=document.createElement("script");try{new Function("if(0)import('')")();s.src=main;s.type="module";s.crossOrigin="use-credentials";}catch(e){s.src="${req.baseUrl}/client/shimport@${build_info.shimport}.js";s.setAttribute("data-main",main);}document.head.appendChild(s);}());`;
 				} else {
 					script += `var s=document.createElement("script");try{new Function("if(0)import('')")();s.src="${main}";s.type="module";s.crossOrigin="use-credentials";}catch(e){s.src="${req.baseUrl}/client/shimport@${build_info.shimport}.js";s.setAttribute("data-main","${main}")}document.head.appendChild(s)`;
@@ -334,7 +343,7 @@ export function get_page_handler(
 				});
 
 				styles = Array.from(css_chunks)
-					.map(href => `<link rel="stylesheet" href="client/${href}">`)
+					.map(file => `<link rel="stylesheet" href="${get_client_file_url(file)}">`)
 					.join('')
 			} else {
 				styles = (css && css.code ? `<style>${css.code}</style>` : '');
@@ -345,7 +354,7 @@ export function get_page_handler(
 
 			const body = template()
 				.replace('%sapper.base%', () => `<base href="${req.baseUrl}/">`)
-				.replace('%sapper.preloads%', () => preloads.length ? preloads.map(({ path, as, rel})=>`<link href="${path}" as="${as}" rel="${rel}">`).join('') : '')
+				.replace('%sapper.preloads%', () => preloads.map(({ href, as, rel})=>`<link href="${href}" as="${as}" rel="${rel}">`).join(''))
 				.replace('%sapper.scripts%', () => `<script${nonce_attr}>${script}</script>`)
 				.replace('%sapper.html%', () => html)
 				.replace('%sapper.head%', () => `<noscript id='sapper-head-start'></noscript>${head}<noscript id='sapper-head-end'></noscript>`)
